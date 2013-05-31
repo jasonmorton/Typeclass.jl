@@ -89,7 +89,7 @@ function _class_code(args...)
         stub_decl=Expr(:(=),Expr(:call,sym,Expr(:(::),Expr(:curly,:Typeclass_stub,quot(class_name)))),true)
         push!(stub_block.args,stub_decl)
     end
-    Expr(:block,class_decl,stub_block)
+    Expr(:block,class_decl,stub_block,nothing)
 end
 
 type Class
@@ -158,7 +158,7 @@ function _instance_code(overwrite,typeclass,implementing_type,args)
     reg_LHS=Expr(:call,symbol(string("implements_",string(class_name))), [Expr(:(::),implementing_type_name) for implementing_type_name in implementing_type_names]...)
     push!(registration_block.args,Expr(:(=),reg_LHS,:true))
 
-    Expr(:block,registration_block,instance_block,class_block)
+    Expr(:block,registration_block,instance_block,class_block,nothing)
 end
 
 
