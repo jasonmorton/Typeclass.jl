@@ -2,11 +2,9 @@ include("Typeclass.jl")
 using Typeclass
 
 @class Eq T begin
-    eq(x::T,y::T)=!noteq(x,y)     #could default as well to comparing names
+    eq(x::T,y::T)=!noteq(x,y)
     noteq(x::T,y::T)=!eq(x,y)
-    #this is already defined for (Any,Any) in operators.jl
-    #so would be ignored
-    #    ==(x::T,y::T)=eq(x,y) 
+    ==(x::T,y::T)=eq(x,y)        #ignored unless use @instance! form
 end
 
 @instance Eq Int begin
@@ -44,6 +42,14 @@ end
 end
 
 @assert eq(Foo(3),Foo(3) )==true
+@assert (Foo(3)==Foo(3) )==false
+
+#test overwriting version
+@instance! Eq Foo begin
+   eq(a::Foo, b::Foo) = a.f==b.f
+end
+@assert (Foo(3)==Foo(3) )==true
+
 
 
 @class Monoid T begin

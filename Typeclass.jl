@@ -1,5 +1,5 @@
 module Typeclass
-export @class, @instance, Typeclass_stub, Class
+export @class, @instance, @instance!, Typeclass_stub, Class
 
 #for clarity
 import Base.Meta.quot
@@ -114,7 +114,7 @@ typesub(binding,e::Expr)   = Expr(e.head,[typesub(binding,a) for a in e.args]...
 typesub(binding,x)         = x
 
 
-function _instance_code(typeclass,implementing_type,args)
+function _instance_code(overwrite,typeclass,implementing_type,args)
     instance_declarations = length(args)>2? filter!(x->x.head!=:line,args[end].args) : {} #allows bare "@instance Foo Bar" with no user declarations
     parsed_instance_declarations = map(parse_declaration,instance_declarations)
     instance_declared_sigs = [parse_sig(pid[1]) for pid in parsed_instance_declarations]
@@ -149,7 +149,7 @@ function _instance_code(typeclass,implementing_type,args)
             check=Expr(:call,isempty,Expr(:call,:methods,fsym,Expr(:tuple,fsig...))) #will error if fsym is undef, and try blocks cause hyg probs, hence stub
             warning=Expr(:call,:info,"Instance delcaration omitted method $(LHS) already defined, skipping specializing $class_name class method") 
             checked_decl = Expr(:if, check, decl, warning)
-            push!(class_block.args,checked_decl)
+            push!(class_block.args, overwrite? decl : checked_decl)
         end
     end
 
@@ -165,9 +165,17 @@ end
 macro instance(args...)
     typeclass=args[1]
     implementing_type=args[2]
-    e=Expr(:call,_instance_code,typeclass,implementing_type,args) #stopping here just returns the code
+    e=Expr(:call,_instance_code,false,typeclass,implementing_type,args) #stopping here just returns the code
     esc(Expr(:call,:eval,e)) #like calling eval( @instance ...) and stopping at previous line; added esc when made a module
 end
+
+macro instance!(args...) #version that overwrites existing methods
+    typeclass=args[1]
+    implementing_type=args[2]
+    e=Expr(:call,_instance_code,true,typeclass,implementing_type,args)
+    esc(Expr(:call,:eval,e))
+end
+
 
 macro ins(args...)
     global typeclass=args[1]
