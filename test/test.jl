@@ -1,29 +1,34 @@
 include("../src/Typeclass.jl")
+using Base.Test
 using Typeclass
+
 
 @class Eq T begin
     eq(x::T,y::T)=!noteq(x,y)
     noteq(x::T,y::T)=!eq(x,y)
-    ==(x::T,y::T)=eq(x,y)        #ignored unless use @instance! form
+    ==(x::T,y::T)=eq(x,y)        # ignored unless use @instance! form
 end
 
 @instance Eq Int begin
     eq(x::Int,y::Int)=x==y
 end
 
-@assert noteq(3,4)
+@test noteq(3,4)
 
 @instance Eq Float64 begin
     noteq(x::Float64,y::Float64)=x!=y
 end
 
-@assert eq(3.0,3.0)
+@test eq(3.0,3.0)
 
-#Note: if you write
-#@instance Eq Int begin
-#    eq(x,y)=x==y
-#end
-#stack overflow, as it should be
+type Bad
+    b
+end
+
+@instance Eq Bad
+
+# stack overflow because we didn't adequately resolve circulars
+@test_fails eq(Bad(0),Bad(0)) 
 
 @class Semiring A begin
        plus(x::A,y::A)=x+y
@@ -35,20 +40,20 @@ type Foo
     f
 end
 
-@assert (Foo(3)==Foo(3) )==false
+@test (Foo(3)==Foo(3) )==false
 
 @instance Eq Foo begin
    eq(a::Foo, b::Foo) = a.f==b.f
 end
 
-@assert eq(Foo(3),Foo(3) )==true
-@assert (Foo(3)==Foo(3) )==false
+@test eq(Foo(3),Foo(3) )==true
+@test (Foo(3)==Foo(3) )==false
 
-#test overwriting version
+# test overwriting version
 @instance! Eq Foo begin
    eq(a::Foo, b::Foo) = a.f==b.f
 end
-@assert (Foo(3)==Foo(3) )==true
+@test (Foo(3)==Foo(3) )==true
 
 @class NameEq T begin
     function eq(x::T,y::T)
@@ -69,12 +74,12 @@ type TestNameEq
 end
 
 
-@assert (TestNameEq(3,4)==TestNameEq(3,4))==false
+@test (TestNameEq(3,4)==TestNameEq(3,4))==false
 @instance NameEq TestNameEq
-@assert (TestNameEq(3,4)==TestNameEq(3,4))==false
-@assert eq(TestNameEq(3,4),TestNameEq(3,4))==true
+@test (TestNameEq(3,4)==TestNameEq(3,4))==false
+@test eq(TestNameEq(3,4),TestNameEq(3,4))==true
 @instance! NameEq TestNameEq
-@assert (TestNameEq(3,4)==TestNameEq(3,4))==true
+@test (TestNameEq(3,4)==TestNameEq(3,4))==true
 
 
 
@@ -88,12 +93,12 @@ end
        mappend(x::Array{Int},y::Array{Int})=[x;y]
 end
     
-@assert munit(Int[3])==Int[]
-@assert mappend([3,4],[4,5])==[3,4,4,5]
+@test munit(Int[3])==Int[]
+@test mappend([3,4],[4,5])==[3,4,4,5]
 
     
 
-#test multiple type parameters
+# test multiple type parameters
 @class Deq S T begin
     deq(x::S,y::T)=x==y
     dneq(x::S,y::T)= !deq(x,y)
@@ -103,13 +108,13 @@ end
     deq(a::Int,b::Float64)=a==b
 end
 
-@assert dneq(3,4.0)
-@assert deq(3,3.0)
+@test dneq(3,4.0)
+@test deq(3,3.0)
 
 
 
-#test function blocks in @instance
-#test things in Base.show
+# test function blocks in @instance
+# test things in Base
 import Base.show #o/w clobbers
 @class Showable T begin
     function show(x::T,y::T)
@@ -118,14 +123,15 @@ import Base.show #o/w clobbers
     end
 end
 
-#another circular definition with heavily overloaded operator
+# another circular definition with heavily overloaded operator
 @class Addable T begin
     add(x::T,y::T)=x+y
     +(x::T,y::T)=add(x,y)
 end
-@instance Addable Int #avoids clobbering +, which would break Julia
 
-#test function blocks in @instance
+@instance Addable Int # avoids clobbering +, which would break Julia
+
+# test function blocks in @instance
 @instance Addable Foo begin
     function add(x::Foo,y::Foo)
         5==3
@@ -138,7 +144,7 @@ end
     end
 end
 
-@assert eq(Foo(4)+Foo(3),Foo(7))
+@test eq(Foo(4)+Foo(3),Foo(7))
 
 type Addable1
     data::Int
@@ -157,9 +163,9 @@ end
 end
 
 
-#finally, the kind of stuff this was written to do
+# finally, the kind of stuff this was written to do
 
-#typeclasses in a multiple dispatch language are properties of tuples of types
+# typeclasses in a multiple dispatch language are properties of tuples of types
 @class MonoidalCategory Ob Mor begin
     dom(f::Mor)::Ob
     cod(f::Mor)::Ob
@@ -169,7 +175,8 @@ end
     otimes(A::Ob,B::Ob)::Ob
     munit(::Ob)::Ob
     munit(f::Mor)=munit(dom(f))
-    #syntax, where % is used for otimes 
+    # syntax, where % is used for otimes 
+    # Note: this won't overwrite *,|,% where they are defined.
     *(f::Mor,g::Mor)=compose(f,g)
     |(f::Mor,g::Mor)=compose(g,f)
     %(f::Mor,g::Mor)=otimes(f,g)
@@ -187,7 +194,7 @@ typealias Mat Matrix{Float64}
     otimes(A::Int,B::Int)=A*B
     munit(::Int)=1
 end
-#Note: this won't overwrite *,|,% where they are defined.
-@assert id(2)%id(2) == id(4)
-@assert dom(rand(2,3))==3
+
+@test id(2)%id(2) == id(4)
+@test dom(rand(2,3))==3
 
