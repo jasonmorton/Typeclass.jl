@@ -50,6 +50,32 @@ end
 end
 @assert (Foo(3)==Foo(3) )==true
 
+@class NameEq T begin
+    function eq(x::T,y::T)
+        for name in names(x)
+            if getfield(x,name)!=getfield(y,name)
+                return false
+            end
+        end
+        return true
+    end
+    ==(x::T,y::T)=eq(x::T,y::T)
+    !=(x::T,y::T)=!eq(x::T,y::T)
+end
+
+type TestNameEq 
+    field1
+    field2
+end
+
+
+@assert (TestNameEq(3,4)==TestNameEq(3,4))==false
+@instance NameEq TestNameEq
+@assert (TestNameEq(3,4)==TestNameEq(3,4))==false
+@assert eq(TestNameEq(3,4),TestNameEq(3,4))==true
+@instance! NameEq TestNameEq
+@assert (TestNameEq(3,4)==TestNameEq(3,4))==true
+
 
 
 @class Monoid T begin
