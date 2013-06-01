@@ -1,4 +1,4 @@
-include("Typeclass.jl")
+include("../src/Typeclass.jl")
 using Typeclass
 
 @class Eq T begin
