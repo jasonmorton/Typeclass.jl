@@ -5,13 +5,17 @@ Typeclass.jl
 
 Multiparameter typeclasses for Julia. Allows circular definitions, interfaces, and so on.
 
-Basic example:
+To use it, define a class by giving some methods, which can either have an output type or default implementation.  Here is an example with only output types:
 ```
 @class Monoid T begin
        munit(::T)::T
        mappend(x::T,y::T)::T
 end
+```
 
+Then declare some type to be an instance of the class, supplying any needed methods.  
+
+```
 @instance Monoid Array{Int} begin
        munit(::Array{Int})=Int[]
        mappend(x::Array{Int},y::Array{Int})=[x;y]
@@ -21,7 +25,7 @@ end
 @test mappend([3,4],[4,5])==[3,4,4,5]
 ```
 
-Circular definitions
+Circular definitions are fine.  They are resolved by Typeclass.jl once you give the instance declaration, and you only need to supply enough information to disambiguate (e.g. defining eq or noteq below is enough).
 ```
 @class Eq T begin
     eq(x::T,y::T)=!noteq(x,y)
@@ -29,6 +33,19 @@ Circular definitions
     ==(x::T,y::T)=eq(x,y) # ignored unless use @instance! form
 end
 ```
+
+Note that  
+
+    @instance
+
+does NOT override any methods that are already able to operate on your type, while 
+
+    @instance!
+
+does register a new method.
+
+
+
 
 More complex example: a monoidal category
 ```
@@ -67,8 +84,3 @@ end
 @test dom(rand(2,3))==3
 ```
 
-Note that 
-    @instance
-does NOT override any methods that are already able to operate on your type, while 
-    @instance!
-does register a new method.
