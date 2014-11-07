@@ -1,4 +1,3 @@
-# Typeclass
 Typeclass.jl
 ============
 
