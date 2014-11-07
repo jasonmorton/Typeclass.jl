@@ -19,6 +19,7 @@ isAssign(x::Expr)=x.head==:(=)
 isAssign(x)=false
 
 
+#Parse the type signature of a given function call
 function parse_sig(call_expr)
     if call_expr.head != :call
         error("Expected call expression: $call_expr")
@@ -42,6 +43,7 @@ end
 #clean up input; the supplied return values are not used right now, so not really important
 unblock(b::Expr) = b.head==:block && length(b.args)==2 && b.args[1].head==:line? b.args[2] :error("Unblock is blocked")
 
+#Parse a function declaration
 function parse_declaration(dec::Expr)
     if isCall(dec) #foo(x::Int,y)
         return_type = Any
