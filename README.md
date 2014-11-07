@@ -6,16 +6,18 @@ Typeclass.jl
 Multiparameter typeclasses for Julia. Allows circular definitions, interfaces, and so on.
 
 To use it, define a class by giving some methods, which can either have an output type or default implementation.  Here is an example with only output types:
-```
+```julia
 @class Monoid T begin
        munit(::T)::T
        mappend(x::T,y::T)::T
 end
 ```
 
-Then declare some type to be an instance of the class, supplying any needed methods.  
+The constructor macro @class takes the name of the typeclass, followed by any number of type parameters separated by spaces, then a begin-end block containing the methods (which use the type parameters).
 
-```
+Now declare some type, or ordered list of types, to be an instance of the class, supplying any needed methods.  
+
+```julia
 @instance Monoid Array{Int} begin
        munit(::Array{Int})=Int[]
        mappend(x::Array{Int},y::Array{Int})=[x;y]
@@ -26,7 +28,7 @@ end
 ```
 
 Circular definitions are fine.  They are resolved by Typeclass.jl once you give the instance declaration, and you only need to supply enough information to disambiguate (e.g. defining eq or noteq below is enough).
-```
+```julia
 @class Eq T begin
     eq(x::T,y::T)=!noteq(x,y)
     noteq(x::T,y::T)=!eq(x,y)
@@ -48,7 +50,7 @@ does register a new method.
 
 
 More complex example: a monoidal category
-```
+```julia
 @class MonoidalCategory Ob Mor begin
     dom(f::Mor)::Ob
     cod(f::Mor)::Ob
@@ -67,7 +69,7 @@ end
 
 Now we can tell Julia how to treat matrices as a monoidal category.
 
-```
+```julia
 typealias Mat Matrix{Float64}
 @instance MonoidalCategory Int Mat begin
     dom(f::Mat)=size(f)[2]
