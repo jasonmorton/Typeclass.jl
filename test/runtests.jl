@@ -206,4 +206,3 @@ end
 
 @test id(2)⊗id(2) == id(4)
 @test dom(rand(2,3))==3
-
