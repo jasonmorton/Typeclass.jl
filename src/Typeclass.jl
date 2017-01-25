@@ -26,7 +26,7 @@ function parse_sig(call_expr)
     else
         sym=call_expr.args[1]
 
-        typesig={}
+        typesig=[]
         for typex in call_expr.args[2:end]
             if isDoubleColon(typex)
                 #parse correctly for foo(::bar) and untyped
@@ -117,17 +117,17 @@ typesub(binding,x)         = x
 
 
 function _instance_code(overwrite,typeclass,implementing_type,args)
-    instance_declarations = length(args)>2? filter!(x->x.head!=:line,args[end].args) : {} #allows bare "@instance Foo Bar" with no user declarations
+    instance_declarations = length(args)>2? filter!(x->x.head!=:line,args[end].args) : Any[] #allows bare "@instance Foo Bar" with no user declarations
     parsed_instance_declarations = map(parse_declaration,instance_declarations)
     instance_declared_sigs = [parse_sig(pid[1]) for pid in parsed_instance_declarations]
     class_name=args[1]
     implementing_type_name=args[2] 
 
     if length(args)>2
-        bindings = Dict(typeclass.type_parameters,args[2:end-1])
+        bindings = Dict(zip(typeclass.type_parameters,args[2:end-1]))
         implementing_type_names=args[2:end-1] 
     else
-        bindings = Dict(typeclass.type_parameters,args[2:end]) #end=2
+        bindings = Dict(zip(typeclass.type_parameters,args[2:end])) #end=2
         implementing_type_names=args[2:end] 
     end
 
@@ -157,7 +157,7 @@ function _instance_code(overwrite,typeclass,implementing_type,args)
 
     #allow adding Typeclass constraints to functions and types, as well as runtime checks
     registration_block=Expr(:block) #uses Graphs.jl method
-    reg_LHS=Expr(:call,symbol(string("implements_",string(class_name))), [Expr(:(::),implementing_type_name) for implementing_type_name in implementing_type_names]...)
+    reg_LHS=Expr(:call,Symbol(string("implements_",string(class_name))), [Expr(:(::),implementing_type_name) for implementing_type_name in implementing_type_names]...)
     push!(registration_block.args,Expr(:(=),reg_LHS,:true))
 
     Expr(:block,registration_block,instance_block,class_block,nothing)
@@ -190,4 +190,3 @@ end
 #_instance_code(args[1],args[2],args) #to debug
 
 end #module
-
