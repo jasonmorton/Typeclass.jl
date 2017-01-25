@@ -1,6 +1,9 @@
 using Typeclass
 using Base.Test
 
+# These operators must be explictly imported to redefine
+import Base: ==, !=, +
+
 @class Eq T begin
     eq(x::T,y::T)=!noteq(x,y)
     noteq(x::T,y::T)=!eq(x,y)
@@ -64,7 +67,7 @@ end
 # A typeclass of things that are equal if all their fields are equal
 @class NameEq T begin
     function eq(x::T,y::T)
-        for name in names(x)
+        for name in fieldnames(typeof(x))
             if getfield(x,name)!=getfield(y,name)
                 return false
             end
@@ -147,8 +150,8 @@ end
         5==3
         try
             garble
-        catch x
-            print(x)
+        catch exc
+            print(exc)
         end
         return Foo(x.f + y.f)
     end
